@@ -185,6 +185,7 @@ for scenario_name in scenarios:
             abs_vbs_distance = 0
             par10 = 0
             par10_with_feature_cost = 0
+            performance_regret = 0
             run_stati = scenario.runstatus_data.loc[problem_instance]
             # print(corras)
             corras_performances = current_frame.loc[problem_instance][
@@ -215,6 +216,7 @@ for scenario_name in scenarios:
                              len(scenario.algorithms))
             par10 = true_performances[np.argmin(corras_performances)]
             par10_with_feature_cost = par10 + feature_cost
+            performance_regret = true_performances[np.argmin(corras_performances)] - np.min(true_performances)
             run_status = run_stati.iloc[np.argmin(corras_performances)]
             corras_measures.append([
                 split, seed, problem_instance, lambda_value, learning_rate,
@@ -222,7 +224,7 @@ for scenario_name in scenarios:
                 layer_sizes, activation_function, use_weighted_samples,
                 scale_target_to_unit_interval, use_max_inverse_transform,
                 tau_corr, tau_p, ndcg, mse, mae, abs_vbs_distance, par10,
-                par10_with_feature_cost, run_status
+                par10_with_feature_cost, performance_regret,run_status
             ])
             # print(corras_measures)
     df_corras = pd.DataFrame(
@@ -233,7 +235,7 @@ for scenario_name in scenarios:
             "layer_sizes", "activation_function", "use_weighted_samples",
             "scale_target_to_unit_interval", "use_max_inverse_transform",
             "tau_corr", "tau_p", "ndcg", "mse", "mae", "abs_distance_to_vbs",
-            "par10", "par10_with_feature_cost", "run_status"
+            "par10", "par10_with_feature_cost", 'performance_regret',"run_status"
         ])
     df_corras.to_csv(evaluations_path + "ki2020-plnet-" + scenario_name +
                      ".csv")

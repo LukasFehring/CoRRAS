@@ -159,6 +159,7 @@ for scenario_name in scenarios:
             mae = 0
             abs_vbs_distance = 0
             par10 = 0
+            performance_regret = 0
             run_stati = scenario.runstatus_data.loc[problem_instance]
             # print(corras)
             corras_performances = current_frame.loc[problem_instance][
@@ -179,13 +180,14 @@ for scenario_name in scenarios:
                              relevance_scores.loc[problem_instance].to_numpy(),
                              len(scenario.algorithms))
             par10 = true_performances[np.argmin(corras_performances)]
+            performance_regret = true_performances[np.argmin(corras_performances)] - np.min(true_performances)
             run_status = run_stati.iloc[np.argmin(corras_performances)]
             corras_measures.append([
                 split, seed, problem_instance, lambda_value, epsilon_value,
                 use_quadratic_transform, use_max_inverse_transform,
                 scale_target_to_unit_interval, skip_censored,
                 regulerization_param, use_weighted_samples, tau_corr, tau_p,
-                ndcg, mse, mae, abs_vbs_distance, par10, run_status
+                ndcg, mse, mae, abs_vbs_distance, par10, performance_regret, run_status
             ])
             # print(corras_measures)
     df_corras = pd.DataFrame(
@@ -195,7 +197,7 @@ for scenario_name in scenarios:
             "quadratic_transform", "max_inverse_transform",
             "scale_to_unit_interval", "skip_censored", "regularization_param",
             "use_weighted_samples", "tau_corr", "tau_p", "ndcg", "mse", "mae",
-            "abs_distance_to_vbs", "par10", "run_status"
+            "abs_distance_to_vbs", "par10", 'performance_regret',"run_status"
         ])
     df_corras.to_csv(evaluations_path + "ki2020-linhinge-" + scenario_name +
                      ".csv")
