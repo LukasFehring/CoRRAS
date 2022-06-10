@@ -20,7 +20,7 @@ from Corras.Evaluation.evaluation import ndcg_at_k, compute_relevance_scores_uni
 # plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from ndcg import ndcg_metric
 # sksurv
 # from sksurv.ensemble import RandomSurvivalForest
 
@@ -172,6 +172,10 @@ for scenario_name in scenarios:
             true_ranking = scenario.performance_rankings.loc[
                 problem_instance].astype("float64").to_numpy()
 
+            if np.min(true_performances) > scenario.algorithm_cutoff_time:
+                continue
+
+
             feature_cost = 0
             # we use all features, so we sum up the individual costs
             if scenario.feature_cost_data is not None:
@@ -187,6 +191,7 @@ for scenario_name in scenarios:
             par10 = 0
             par10_with_feature_cost = 0
             peformance_regret = 0
+            unsolved = 0
             run_stati = scenario.runstatus_data.loc[problem_instance]
             # print(corras)
             corras_performances = current_frame.loc[problem_instance][
@@ -206,12 +211,24 @@ for scenario_name in scenarios:
             mae = mean_absolute_error(true_performances, corras_performances)
             abs_vbs_distance = compute_distance_to_vbs(corras_performances,
                                                        true_performances)
-            ndcg = ndcg_at_k(corras_ranking,
-                             relevance_scores.loc[problem_instance].to_numpy(),
-                             len(scenario.algorithms))
-            par10 = true_performances[np.argmin(corras_performances)]
+            true_performances = true_performances.clip(max = scenario.algorithm_cutoff_time)
+            performance_regret = true_performances[np.argmin(corras_performances)] - np.min(true_performances)
+            ndcg = ndcg_metric(true_performances, corras_ranking) 
+            
+            if true_performances[np.argmin(corras_performances)] > scenario.algorithm_cutoff_time:
+                unsolved = 1
+            else:
+                unsolved = 0
+            
+            modified_true_performance = true_performances + feature_cost
+            
+            if modified_true_performance[np.argmin(corras_performances)] > scenario.algorithm_cutoff_time:
+                par10 = 10 * scenario.algorithm_cutoff_time
+            else:
+                par10 = np.min(modified_true_performance)
+                
+                
             par10_with_feature_cost = par10 + feature_cost
-            performance_ragret = true_performances[np.argmin(corras_performances)] - np.min(true_performances)
             run_status = run_stati.iloc[np.argmin(corras_performances)]
             corras_measures.append([
                 split, seed, problem_instance, lambda_value, epsilon_value,
@@ -219,8 +236,8 @@ for scenario_name in scenarios:
                 batch_size, layer_sizes, activation_function,
                 use_weighted_samples,
                 scale_target_to_unit_interval,
-                use_max_inverse_transform, tau_corr, tau_p, ndcg, mse,
-                mae, abs_vbs_distance, par10, par10_with_feature_cost, performance_ragret,
+                use_max_inverse_transform, tau_corr, tau_p, ndcg,unsolved, mse,
+                mae, abs_vbs_distance, par10, par10_with_feature_cost, peformance_regret,
                 run_status
             ])
             # print(corras_measures)
@@ -232,7 +249,7 @@ for scenario_name in scenarios:
             "batch_size", "layer_sizes", "activation_function",
             "use_weighted_samples",
             "scale_target_to_unit_interval",
-            "use_max_inverse_transform", "tau_corr", "tau_p", "ndcg",
+            "use_max_inverse_transform", "tau_corr", "tau_p", "ndcg", "unsolved",
             "mse", "mae", "abs_distance_to_vbs", "par10",
             "par10_with_feature_cost", 'performance_regret',"run_status"
         ])
